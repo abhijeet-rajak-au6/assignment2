@@ -37,26 +37,54 @@ let getAllMeetingsInTimeRange = async (start, end, page, limit) => {
   return meetings;
 };
 
-let getMeetingsWithParticipant = async (participant, page, limit) => {
+let getMeetingsWithParticipant = async (participant, page=1, limit=2) => {
   const pageNo = page * 1;
   const limit1 = limit * 1;
   const skip = (pageNo - 1) * limit1;
-  const meetings = await meetingModel
-    .find({})
-    .populate({
-      path: "participants",
-      match: { email: participant },
-      // match:{"participants": { $not:{$size: 0 }} }
-    })
+  const meetings = await meetingModel.aggregate([
+    {
+      $lookup: {
+        from: "participants",
+        localField: "participants",
+        foreignField: "_id",
+        as: "participants",
+      },
+    },
+    {
+      $match: {
+        "participants.email": participant,
+      },
+    },
+    {
+      $unwind: "$participants",
+    },
+    { $match: { "participants.email": participant } },
+    // { $group: { _id: "$_id", } },
+
+    {
+      $skip: skip,
+    },
+    {
+      $limit: limit1,
+    },
+  ]);
+
+  // const meetings = await meetingModel
+  //   .find({})
+  //   .populate({
+  //     path: "participants",
+  //     match: { email: participant },
+  //     // match:{"participants": { $not:{$size: 0 }} }
+  //   })
 
   // console.log(meetings);
-
+  return meetings;
   // console.log(skip, limit1);
-  let filterdMeeting = meetings.filter((meeting, idx) => {
-    // console.log(idx);
-    if (meeting.participants.length !== 0) return meeting;
-  });
-  return filterdMeeting;
+  // let filterdMeeting = meetings.filter((meeting, idx) => {
+  //   // console.log(idx);
+  //   if (meeting.participants.length !== 0) return meeting;
+  // });
+  // return filterdMeeting;
 };
 
 module.exports = {
