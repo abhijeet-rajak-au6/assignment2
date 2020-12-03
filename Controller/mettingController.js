@@ -219,7 +219,7 @@ module.exports = {
         return res.status(201).send({
           status: "success",
           msg: "meeting created sucessfully",
-          // meeting,
+          meeting,
         });
       } else if (meeting[0].participants.length) {
         return res.status(403).send({
